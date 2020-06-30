@@ -1,75 +1,114 @@
-from lark import Lark
-from lark import UnexpectedInput, UnexpectedCharacters, UnexpectedToken, Token
+from lark import Lark, Token, Transformer
+from lark import UnexpectedInput, UnexpectedCharacters, UnexpectedToken
+
 from typing import List
-
+import glob
 import os
+import sys
+from pprint import pprint
+from enum import Enum
 
 
-class Parser(object):
-    def __init__(self, syntaxPath: str = None, inputs: List[str] = None):
+class ProtoTokens(Enum):
+    DECLARATION = 1
+    TYPE_BLOCK = 2
+    DATA_TYPE = 3
+    HEADER_NAME = 4
+    NAME = 5
+    REQ = 6
+    OPT = 7
+    REQUIRED = 8
+    INCLUDE = 9
+
+
+class ProtoTransformer(Transformer):
+    def header(self, item):
+        (item,) = item
+        return item
+
+    def start(self, items): return list(items)
+
+    def declaration(self, items): return {ProtoTokens.DECLARATION: items}
+
+    def type_block(self, items): return {ProtoTokens.TYPE_BLOCK: items}
+
+    def data_opt(self, item):
+        if len(item) > 0:
+            return {ProtoTokens.REQUIRED: item[0]}
+        return {ProtoTokens.REQUIRED: False}
+
+    def include(self, item): return {ProtoTokens.INCLUDE: item[0]}
+
+    def data_type(self, item):
+        if item[0] == 'req' or item[0] == 'opt':
+            raise SyntaxError('DATATYPE Expected, '
+                              'received {}'.format(item[0]))
+        return {ProtoTokens.DATA_TYPE: item[0]}
+
+    def HEADER_NAME(self, item: Token):
+        return {ProtoTokens.HEADER_NAME: item.value}
+
+    def name(self, item): return {ProtoTokens.NAME: item[0]}
+    def DATATYPE(self, item: Token): return item.value
+    def REQUIRED(self, item): return True
+    def OPTIONAL(self, item): return False
+    def ESCAPED_STRING(self, item): return item.strip("'").strip('"')
+    def QNAME(self, item): return self.ESCAPED_STRING(item)
+
+
+class ProtogenParser(object):
+    def __init__(self, syntaxPath: str = 'grammar/proto_gen.lark',
+                 inputs: List[str] = None):
+
+        if len(inputs) == 0:
+            print('You must specify at least one valid input file '
+                  '(glob patterns are accepted).')
+            print('Example:\n *.protogen input/example.protogen')
+            sys.exit(1)
+
+        # Clean up and list input files.
+        self._files = {}
+        files_to_compile = set()
+        for items in inputs:
+            for item in glob.glob(items):
+                files_to_compile.add(item)
+                self._files[item] = None
+
         with open(os.path.join(os.path.dirname(__file__),
-                               'grammar/proto_gen.lark'), 'r') as file:
+                               syntaxPath), 'r') as file:
             grammar = file.read()
+
         self._parser = Lark(grammar=grammar, parser='lalr',
                             propagate_positions=True)
-        self._files = inputs
-        self.data = []
 
     def parse(self):
         for item in self._files:
-            with open(item, 'r') as data:
-                self.data.append(self._parser.parse(data.read()))
+            try:
+                with open(item, 'r') as data:
+                    self._files[item] = self._parser.parse(data.read())
+                    # MyTransformer().transform(parser._files[item])
+            except IsADirectoryError as e:
+                print('You must specify files. For multiple files in a '
+                      'directory, a glob pattern may be used.')
+                print('Example: directory/*.protogen')
+                sys.exit(2)
+
+    def transform(self):
+        self._trees = {}
+        for item in self._files:
+            self._trees[item] = ProtoTransformer().transform(self._files[item])
 
     def display(self):
-        for item in self.data:
-            print(item.pretty())
+        for item in self._files:
+            print("--- BEGIN FILE: {} ---".format(item))
+            print(self._files[item].pretty())
+            print("---   END FILE: {} ---".format(item))
 
+    def _display(self):
+        for item in self._files:
+            print("--- BEGIN FILE: {} ---".format(item))
+            print(self._files[item])
+            print("---   END FILE: {} ---".format(item))
 
-def main():
-
-    # with open("syntax.lark", 'r') as file:
-    #     lingo = file.read()
-    with open(os.path.join(os.path.dirname(__file__), "testfile.protogen"), 'r') as file:
-        data = file.read()
-
-    tester = Parser()
-
-    print(tester._parser.parse(data).pretty())
-
-    # datalines = data.splitlines()
-    # parser = Lark(grammar=lingo, propagate_positions=True, parser="lalr")
-
-    # try:
-    #     stuff = parser.parse(data)
-    # except UnexpectedInput as u:
-    #     print(u)
-    #     # print("--- Parsing Error ---")
-    #     # print("Line:   {}\nColumn: {}".format(u.line, u.column))
-    #     # print()
-    #     # print(datalines[u.line - 1])
-    #     # print(" "*(u.column - 1) + "^\n")
-
-    #     # if type(u) is UnexpectedCharacters:
-    #     #     if 'HEADER_NAME' in u.allowed:
-    #     #         print("The package name must consist of only letters,"
-    #     #               " and start with a capital letter.")
-    #     # elif type(u) is UnexpectedToken:
-    #     #     if 'HEADER_NAME' in u.expected:
-    #     #         print("A capitalized package name is expected. Example:\n")
-    #     #         print("name MyPackage;")
-    #     #         print("name Sample;")
-    #     #     if 'DELIMETER' in u.expected:
-    #     #         print("Extra data in line, needs removed.")
-    #     #     if 'TYPE' in u.expected:
-    #     #         print("Syntax error, 'type' expected.")
-
-    # print(stuff.pretty())
-    # for item in stuff.iter_subtrees_topdown():
-    #     print("Token: {}\n Data: {}\n".format(item.data, item.children[0]))
-
-    # files_to_import = []
-    # for item in stuff.find_data("include"):
-    #     files_to_import.append(str(item.children[0]).strip("'"))
-
-    # for item in files_to_import:
-    #     print(item)
+    def pretty(self):
+        pprint(self._files)
