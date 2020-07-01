@@ -1,62 +1,19 @@
-from lark import Lark, Token, Transformer
+import lark
+from lark import Lark, Token
 from lark import UnexpectedInput, UnexpectedCharacters, UnexpectedToken
+
+from protogen.util import PGToken
+from protogen.transformer import PGTransformer
+from protogen.compiler import PythonCompiler
 
 from typing import List
 import glob
 import os
 import sys
 from pprint import pprint
-from enum import Enum
 
 
-class ProtoTokens(Enum):
-    DECLARATION = 1
-    TYPE_BLOCK = 2
-    DATA_TYPE = 3
-    HEADER_NAME = 4
-    NAME = 5
-    REQ = 6
-    OPT = 7
-    REQUIRED = 8
-    INCLUDE = 9
-
-
-class ProtoTransformer(Transformer):
-    def header(self, item):
-        (item,) = item
-        return item
-
-    def start(self, items): return list(items)
-
-    def declaration(self, items): return {ProtoTokens.DECLARATION: items}
-
-    def type_block(self, items): return {ProtoTokens.TYPE_BLOCK: items}
-
-    def data_opt(self, item):
-        if len(item) > 0:
-            return {ProtoTokens.REQUIRED: item[0]}
-        return {ProtoTokens.REQUIRED: False}
-
-    def include(self, item): return {ProtoTokens.INCLUDE: item[0]}
-
-    def data_type(self, item):
-        if item[0] == 'req' or item[0] == 'opt':
-            raise SyntaxError('DATATYPE Expected, '
-                              'received {}'.format(item[0]))
-        return {ProtoTokens.DATA_TYPE: item[0]}
-
-    def HEADER_NAME(self, item: Token):
-        return {ProtoTokens.HEADER_NAME: item.value}
-
-    def name(self, item): return {ProtoTokens.NAME: item[0]}
-    def DATATYPE(self, item: Token): return item.value
-    def REQUIRED(self, item): return True
-    def OPTIONAL(self, item): return False
-    def ESCAPED_STRING(self, item): return item.strip("'").strip('"')
-    def QNAME(self, item): return self.ESCAPED_STRING(item)
-
-
-class ProtogenParser(object):
+class PGParser(object):
     def __init__(self, syntaxPath: str = 'grammar/proto_gen.lark',
                  inputs: List[str] = None):
 
@@ -65,6 +22,9 @@ class ProtogenParser(object):
                   '(glob patterns are accepted).')
             print('Example:\n *.protogen input/example.protogen')
             sys.exit(1)
+
+        # Variables
+        self.files = []
 
         # Clean up and list input files.
         self._files = {}
@@ -95,8 +55,15 @@ class ProtogenParser(object):
 
     def transform(self):
         self._trees = {}
-        for item in self._files:
-            self._trees[item] = ProtoTransformer().transform(self._files[item])
+        for file in self._files:
+            self._trees[file] = PGTransformer().transform(self._files[file])
+            # pprint(self._trees[file])
+        test = None
+        for tree in self._trees:
+            # len(_files) == len(_trees) AND order == 'same'
+            test = PGFile(tree, self._trees[tree])
+
+        myCompiler = PythonCompiler(test)
 
     def display(self):
         for item in self._files:
@@ -112,3 +79,87 @@ class ProtogenParser(object):
 
     def pretty(self):
         pprint(self._files)
+
+
+# class PGTree(object):
+#     def __init__(self):
+#         self.headers = []
+
+#     def reform(self, trees):
+#         for tree in trees:  # [{tree}, {}, ...] Trees
+#             for item in trees[tree]:
+#                 for thing in item:
+#                     print(thing)
+#                     print(item)
+#                     if thing is Tokens.HEADER_NAME:
+#                         self.headers.append(item[thing])
+#                     elif thing == Tokens.INCLUDE:
+#                         pass
+#         print(self.headers)
+
+
+class PGFile(object):
+    def __init__(self, path, tree):
+        self.filename = path
+        self.header = None
+        self.includes = []
+        self.declarations = {}
+        self.types = []
+
+        self.buildFile(tree)
+
+        # self.compilePython()
+
+    def buildFile(self, tree):
+        for tree_item in tree:
+            for token in tree_item:
+                if token is PGToken.HEADER_NAME:
+                    self.header = tree_item[token]
+                elif token is PGToken.INCLUDE:
+                    self.includes.append(tree_item[token])
+                elif token is PGToken.TYPE_BLOCK:
+                    # print("tree_item:", tree_item)
+                    # print("tree_item[token]", tree_item[token])
+                    self.processTypeBlock(None, tree_item[token],
+                                          tree_item[token])
+                else:
+                    print("Bad token!")
+
+        pprint({"name": self.filename,
+                "header": self.header,
+                "includes": self.includes,
+                "declarations": self.declarations,
+                "types": self.types})
+
+    def processTypeBlock(self, parent_type, parent_type_block,
+                         current_type_block):
+        if parent_type_block == current_type_block:
+            parent_type = current_type_block[0]
+            self.types.append((current_type_block[0], None, parent_type))
+        else:
+            parent_type += '.' + current_type_block[0]
+            self.types.append((current_type_block[0], parent_type_block[0],
+                              parent_type))
+
+        for tokens in current_type_block:
+            for token in tokens:
+                if token is PGToken.DECLARATION:
+                    fullType = parent_type + '.' + tokens[token][0]
+                    self.declarations[fullType] = (tokens[token][1],
+                                                   tokens[token][2])
+                if token is PGToken.TYPE_BLOCK:
+                    self.processTypeBlock(
+                        parent_type, current_type_block, tokens[token])
+
+
+    # def compilePython(self):
+    #     i = "    "  # shorthand for indent
+    #     classItems = set()
+    #     declarations = list(self.declarations.keys())
+    #     for key, item in enumerate(declarations):
+    #         declarations[key] = item.split('.')
+
+    #     while len(declarations) > 0:
+    #         for key, item in enumerate(declarations):
+    #             if len(item) == 2:
+    #                 pass

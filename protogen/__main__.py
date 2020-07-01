@@ -1,4 +1,4 @@
-from protogen.core import ProtogenParser, ProtoTransformer
+from protogen.core import PGParser
 
 import argparse
 import glob
@@ -28,11 +28,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Begin Parsing Documents
-    parser = ProtogenParser(inputs=args.input)
+    parser = PGParser(inputs=args.input)
     parser.parse()
     parser.transform()
 
     if args.verbose:
         parser.display()
     
-    pprint(parser._trees)
+    # pprint(parser._trees)
