@@ -1,12 +1,12 @@
-from distutils.core import setup
-from setuptools import find_packages
+from setuptools import find_packages, setup
 
 setup(
-    name="proto_gen_compiler",
+    name="protogen",
     version="1.0",
     description="Protocol Generator for Python",
     author="Conner Marzen",
+    author_email="connermarzen@gmail.com",
     url="https://github.com/connermarzen/proto_gen_compiler",
     packages=find_packages(),
-    requires=['lark-parser']
+    install_requires=['lark-parser']
 )

@@ -1,51 +1,3 @@
-// _WS_INLINE : (" "|/\t/)+
-// _WS        : /[ \t\f\r\n]/+
-// CR         : /\r/
-// LF         : /\n/
-// NEWLINE    : (CR? LF)+
-// COMMENT    : "//" /[^\n]*/ NEWLINE*
-// B_COMMENT  : "/*" /(\S|\s)*?/ "*/"
-
-// %ignore COMMENT
-// %ignore B_COMMENT
-// %ignore NEWLINE
-// %ignore _WS
-// %ignore _WS_INLINE
-
-// _DELIMETER : ";"
-// _LBRACE    : "{"
-// _RBRACE    : "}"
-
-// HEADER_NAME       : /[A-Z]+[a-zA-Z]*/
-// QNAME             : /[a-zA-Z]+/
-// _QNAME            : QNAME
-// _STRING_INNER     : /.*?/
-// _STRING_ESC_INNER : _STRING_INNER /(?<!\\)(\\\\)*?/ 
-// ESCAPED_STRING    : ("\"" _STRING_ESC_INNER "\"" |"'" _STRING_ESC_INNER "'")
-
-// _DOT : "."
-
-// REQUIRED : "req"
-// OPTIONAL : "opt"
-
-// _U32    : ("uint32" | "u32")
-// _U64    : ("uint64" | "u64")
-// _I32    : ("int32" | "i32")
-// _I64    : ("int64" | "i64")
-// _STRING : (/[S|s]tring/ | "str")
-// _BYTES  : /[B|b]ytes/
-
-// _INTS        : (_U32 | _U64 | _I32 | _I64)
-// DATATYPE     : (_INTS | _STRING | _BYTES | QNAME)
-
-// declaration  : QNAME (_DOT DATATYPE) (_DOT(REQUIRED | OPTIONAL))? _DELIMETER
-// include      : "include" _WS_INLINE* ESCAPED_STRING _DELIMETER
-// statement    : QNAME _DELIMETER
-// header       : "name" _WS_INLINE* HEADER_NAME _DELIMETER
-// type_block   : "type" _WS_INLINE* QNAME _LBRACE ( statement | type_block | declaration )* _RBRACE
-
-// start : header include* type_block*
-
 _WS_INLINE : (" "|/\t/)+
 _WS        : /[ \t\f\r\n]/+
 CR         : /\r/
@@ -65,7 +17,7 @@ _LBRACE    : "{"
 _RBRACE    : "}"
 
 HEADER_NAME       : /[A-Z]+[a-zA-Z]*/
-QNAME             : /[a-zA-Z]+/
+QNAME             : /[a-zA-Z]+[a-zA-Z0-9]*/
 _QNAME            : QNAME
 // TYPENAME          : /(?!^\.req$|^\.opt$)^\.[a-zA-Z]+/
 _STRING_INNER     : /.*?/
