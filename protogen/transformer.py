@@ -1,5 +1,6 @@
 import lark
 from protogen.util import PGToken
+from protogen.library.std import STANDARD_TYPES
 
 
 class PGTransformer(lark.Transformer):
@@ -24,7 +25,10 @@ class PGTransformer(lark.Transformer):
         if item[0] == 'req' or item[0] == 'opt':
             raise SyntaxError('DATATYPE Expected, '
                               'received {}'.format(item[0]))
-        return item[0]
+        if item[0] in STANDARD_TYPES:
+            return STANDARD_TYPES[item[0]]
+        else:
+            return item[0]
 
     def HEADER_NAME(self, item):
         return {PGToken.HEADER_NAME: item.value}
