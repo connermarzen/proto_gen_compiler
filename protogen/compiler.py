@@ -55,13 +55,11 @@ class PythonCompiler(object):
     def printClass(self, pyClass: PyClass,
                    indent: Tuple[str, int], root: bool):
         ind, mul = indent  # indentation, multiplier (for indentation)
-        print('\n')
         if root:
-            print("class {}(Message, Serializable, "
+            print("\nclass {}(Message, Serializable, "
                   "Printable):".format(pyClass.name))
         else:
-            print("{}class {}(Printable):".format(ind*mul,
-                                                  pyClass.name))
+            print("\n{}class {}(Printable):".format(ind*mul, pyClass.name))
         # print("{}".format(ind*mul))
         # print("{}pass".format(ind*(mul+2)))
         print("\n{}def __init__(self):".format(ind*(mul+1)))
@@ -70,6 +68,7 @@ class PythonCompiler(object):
             self.printClass(item, (ind, mul+1), False)
 
         self.printMethods(pyClass, (ind, mul+1))
+        print("{}# End Class {}".format(ind*mul, pyClass.name))
 
     def printAttributes(self, pyClass: PyClass, indent: Tuple[str, int]):
         ind, mul = indent  # indentation, multiplier (for indentation)
@@ -138,7 +137,7 @@ class PythonCompiler(object):
     def generateCode(self, indent: str):
         print("from protogen.library.message import Message")
         print("from protogen.library.message import Serializable")
-        print("from protogen.library.message import Printable")
+        print("from protogen.library.message import Printable\n")
         for item in self.classes:
             if item.parent is None:
                 self.printClass(item, (indent, 0), True)

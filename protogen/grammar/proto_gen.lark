@@ -48,4 +48,5 @@ statement    : QNAME _DELIMETER
 header       : "name" _WS_INLINE* HEADER_NAME _DELIMETER
 type_block   : "type" _WS_INLINE* name _LBRACE ( statement | type_block | declaration )* _RBRACE
 
-start : header include* type_block*
+start : header type_block* // includes will be part of a future update.
+// start : header include* type_block*

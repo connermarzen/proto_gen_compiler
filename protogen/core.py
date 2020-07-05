@@ -15,12 +15,6 @@ class PGParser(object):
     def __init__(self, syntaxPath: str = 'grammar/proto_gen.lark',
                  inputs: List[str] = None):
 
-        if len(inputs) == 0:
-            print('You must specify at least one valid input file '
-                  '(glob patterns are accepted).')
-            print('Example:\n *.protogen input/example.protogen')
-            sys.exit(1)
-
         # Variables
         self.files = []
 
@@ -30,7 +24,17 @@ class PGParser(object):
         for items in inputs:
             for item in glob.glob(items):
                 files_to_compile.add(item)
-                self._files[item] = None
+                self._files[item] = None  # Add placeholder in dict for parsing
+
+        if len(self._files) == 0:
+            print('No valid files were specified.')
+            print('Note: a glob pattern is acceptible for multiple files.\n')
+            print('Example:\n  *.protogen\n')
+            print('You can also specify more than one file, '
+                  'separated by spaces.\n')
+            print('Example:\n  a.protogen b.protogen c.protogen')
+
+            sys.exit(1)
 
         with open(os.path.join(os.path.dirname(__file__),
                                syntaxPath), 'r') as file:
