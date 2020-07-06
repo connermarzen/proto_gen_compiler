@@ -7,16 +7,13 @@ from typing import List
 from lark import Lark
 
 from protogen.compiler import PythonCompiler
-from protogen.transformer import PGTransformer
+from protogen.grammar.transformer import PGTransformer
 from protogen.util import PGToken, PGFile
 
 
 class PGParser(object):
     def __init__(self, syntaxPath: str = 'grammar/proto_gen.lark',
                  inputs: List[str] = None):
-
-        # Variables
-        self.files = []
 
         # Clean up and list input files.
         self._files = {}
@@ -60,12 +57,13 @@ class PGParser(object):
         for file in self._files:
             self._trees[file] = PGTransformer().transform(self._files[file])
             # pprint(self._trees[file])
-        test = None
+        outfiles = []
         for tree in self._trees:
             # len(_files) == len(_trees) AND order == 'same'
             # TODO Fix this to make it modular for more than one file.
             # NOTE currently, this only supports a single file.
-            return PGFile(tree, self._trees[tree])
+            outfiles.append(PGFile(tree, self._trees[tree]))
+        return outfiles
 
     def display(self):
         for item in self._files:
