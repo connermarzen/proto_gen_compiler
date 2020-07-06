@@ -6,14 +6,13 @@ from typing import List
 
 from lark import Lark
 
-from protogen.compiler import PythonCompiler
 from protogen.grammar.transformer import PGTransformer
-from protogen.util import PGToken, PGFile
+from protogen.util import PGFile
 
 
 class PGParser(object):
-    def __init__(self, syntaxPath: str = 'grammar/proto_gen.lark',
-                 inputs: List[str] = None):
+    def __init__(self, inputs: List[str],
+                 syntaxPath: str = 'grammar/proto_gen.lark'):
 
         # Clean up and list input files.
         self._files = {}

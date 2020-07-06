@@ -17,8 +17,10 @@ if __name__ == '__main__':
                         help='Input directory for Protogen files.')
 
     parser.add_argument('-py', '--python',
-                        nargs=1,
-                        metavar="out_dir",
+                        type=str,
+                        const="output",
+                        metavar='out_dir',
+                        nargs='?',
                         help='Output directory for compiled Python files.')
 
     parser.add_argument('-m', '--minify',
@@ -41,10 +43,8 @@ if __name__ == '__main__':
         print('You must specify at least one output format ("--python out_dir" etc.)')
         sys.exit(1)
 
-    # Begin Parsing Documents
-    parser = PGParser(inputs=args.input)
-    parser.parse()
-    myCompiler = PythonCompiler(parser.transform())
-
-    if args.verbose:
-        parser.display()
+    if args.python:
+        pyCompiler = PythonCompiler(inFiles=args.input,
+                                    outDir=args.python,
+                                    verbose=args.verbose)
+        pyCompiler.compile()
