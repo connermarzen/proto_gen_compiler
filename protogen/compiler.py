@@ -1,7 +1,7 @@
 from io import TextIOWrapper
 import os
 
-from typing import List
+from typing import List, Text, TextIO
 
 import protogen.util as util
 from protogen.core import PGParser
@@ -46,8 +46,12 @@ class PythonCompiler(object):
                 tab*indent, pyClass.name))
         # print("{}".format(ind*mul))
         # print("{}pass".format(ind*(mul+2)))
-        out.write("\n{}def __init__(self):\n".format(tab*(indent+1)))
+        out.write("\n{}def __init__(self, data: dict = None):\n"
+                  .format(tab*(indent+1)))
         self.printAttributes(out, file, pyClass, indent+1)
+        if root:
+            out.write("\n{}if data is not None:\n".format(tab*(indent+2)))
+            out.write("{}self._init(self, data)\n".format(tab*(indent+3), ))
         for item in pyClass.subclasses:
             self.printClass(out, file, item, indent+1, False)
 
@@ -118,6 +122,32 @@ class PythonCompiler(object):
                         short, thing[1]), short))
                 out.write('{}return self\n'.format((tab*(indent+1))))
 
+    def printFactory(self, out: TextIOWrapper, file: PGFile):
+        tab = '    '
+        outString = (
+            "\n\nclass {}Factory(object):\n"
+            "    @staticmethod\n"
+            "    def deserialize(data: bytes) -> Message:\n"
+            "        data = Serializable.deserialize(data)\n"
+            "        if len(data) > 1:\n"
+            "            raise AttributeError('This is likely not a Protogen packet.')\n"
+            "\n"
+            "        packetType = None\n"
+            "        for item in data:\n"
+            "            packetType = item[item.rfind('.')+1:]\n"
+        )
+        out.write(outString.format(file.header))
+        for item in file.classes:
+            if item.parent is None:  # root-level class
+                out.write('{}if packetType == \'{}\':\n'.format(
+                    tab*3, item.name))
+                out.write('{}return {}(data[item])\n'.format(tab*4, item.name))
+        outString = (
+            "            else:\n"
+            "                raise AttributeError('Respective class not found.')\n"
+        )
+        out.write(outString)
+
     def generateCode(self, out: TextIOWrapper, file: PGFile, indent: str = '    '):
         out.write("from protogen.library.message import Message\n")
         out.write("from protogen.library.message import Serializable\n"),
@@ -125,3 +155,4 @@ class PythonCompiler(object):
         for item in file.classes:
             if item.parent is None:
                 self.printClass(out, file, item, 0, True)
+        self.printFactory(out, file)

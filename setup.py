@@ -8,5 +8,5 @@ setup(
     author_email="connermarzen@gmail.com",
     url="https://github.com/connermarzen/proto_gen_compiler",
     packages=find_packages(),
-    install_requires=['lark-parser']
+    install_requires=['lark-parser', 'msgpack-python']
 )

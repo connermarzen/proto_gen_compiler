@@ -1,9 +1,53 @@
-from typing import Tuple
+from typing import Dict
+from pprint import pprint
+import msgpack
 
 
 class Serializable(object):
-    def Serialize(self, data):
-        pass
+    def serialize(self):
+        return msgpack.packb(self._encode())
+
+    @staticmethod
+    def deserialize(data: bytes) -> Dict:
+        return msgpack.unpackb(data, raw=False)
+
+    def __encode(self, data=None, out: Dict = None) -> Dict:
+        out = dict()
+
+        if data is None:
+            data = vars(self)
+        else:
+            data = vars(data)
+
+        for item in data:
+            if not isinstance(data[item], (int, float, str, list, dict, set, type(None))):
+                if item.startswith('_r_'):
+                    out[item.lstrip('_r_')] = (self.__encode(
+                        data=data[item], out=out), True)
+                elif item.startswith('_o_'):
+                    out[item.lstrip('_o_')] = (self.__encode(
+                        data=data[item], out=out), False)
+            else:
+                if item.startswith('_r_'):
+                    out[item.lstrip('_r_')] = (data[item], True)
+                elif item.startswith('_o_'):
+                    out[item.lstrip('_o_')] = (data[item], False)
+        return out
+
+    def _encode(self) -> Dict:
+        finalOut = self.__encode()
+        return {
+            self.__class__.__module__+'.'+self.__class__.__name__: finalOut
+        }
+
+    @staticmethod
+    def _init(node, data):
+        for item in data:
+            req = ('_r_' if data[item][1] else '_o_') + item
+            if type(data[item][0]) is dict:
+                Serializable._init(getattr(node, req), data[item][0])
+            else:
+                setattr(node, req, data[item][0])
 
 
 class Printable(object):
@@ -27,46 +71,46 @@ class Printable(object):
                     if item.startswith('_o_'):
                         outString += '{}{:<20} \n{}'.format(
                             self._indent(indent),
-                            item.strip('_o_') + ' (opt)',
+                            item.lstrip('_o_') + ' (opt)',
                             self._str(data[item], indent+1))
                     elif item.startswith('_r_'):
                         outString += '{}{:<20} \n{}'.format(
                             self._indent(indent),
-                            item.strip('_r_') + ' (req)',
+                            item.lstrip('_r_') + ' (req)',
                             self._str(data[item], indent+1))
                 else:
                     if item.startswith('_o_'):
                         outString += '{}{:<20} \n{}'.format(
                             '    '*indent,
-                            item.strip('_o_') + ' (opt)',
+                            item.lstrip('_o_') + ' (opt)',
                             self._str(data[item], indent+1))
                     elif item.startswith('_r_'):
                         outString += '{}{:<20} \n{}'.format(
                             '    '*indent,
-                            item.strip('_r_') + ' (req)',
+                            item.lstrip('_r_') + ' (req)',
                             self._str(data[item], indent+1))
             else:
                 if indent > 0:
                     if item.startswith('_o_'):
                         outString += '{}\u2192 {:<20}: {} (opt)\n'.format(
                             self._indent(indent),
-                            item.strip('_o_'),
+                            item.lstrip('_o_'),
                             data[item])
                     elif item.startswith('_r_'):
                         outString += '{}\u2192 {:<20}: {} (req) \n'.format(
                             self._indent(indent),
-                            item.strip('_r_'),
+                            item.lstrip('_r_'),
                             data[item])
                 else:
                     if item.startswith('_o_'):
                         outString += '{}{:<20}: {} (opt)\n'.format(
                             self._indent(indent),
-                            item.strip('_o_'),
+                            item.lstrip('_o_'),
                             data[item])
                     elif item.startswith('_r_'):
                         outString += '{}{:<20}: {} (req) \n'.format(
                             self._indent(indent),
-                            item.strip('_r_'),
+                            item.lstrip('_r_'),
                             data[item])
         return outString
 
@@ -81,5 +125,14 @@ class Validatable(object):
 
 
 class Message(object):
-    def __init__(self):
-        pass
+    def _filterVars(self, data) -> bool:
+        if data.startswith('_o_') or data.startswith('_r_'):
+            return True
+        return False
+
+    def matchAttribute(self, varName: str):
+        for item in filter(self._filterVars, vars(self)):
+            if item.lstrip('_o_').lstrip('_r_') == varName:
+                return item
+        raise AttributeError('Variable name \'{}\' not found in {}.'
+                             .format(varName, self.__class__.__name__))

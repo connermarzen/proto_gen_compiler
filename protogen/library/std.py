@@ -11,4 +11,6 @@ STANDARD_TYPES = {
     'str':    'str',
     'Bytes':  'bytes',
     'bytes':  'bytes',
+    'Float':  'float',
+    'float':  'float'
 }
