@@ -35,12 +35,13 @@ _I32     : ("int32" | "i32")
 _I64     : ("int64" | "i64")
 _FLOAT   : (/[F|f]loat/)
 _DOUBLE  : (/[D|d]ouble/)
-_STRING  : (/[S|s]tring/ | "str")
+_STRING  : (/[S|s]tr(ing)?/)
 _BYTES   : /[B|b]ytes/
+_BOOL    : (/[B|b]ool(ean)?/)
 
 _INTS    : (_U32 | _U64 | _I32 | _I64)
 _FLOATS  : (_FLOAT ) // | _DOUBLE
-DATATYPE : (_INTS | _STRING | _BYTES | _FLOATS | QNAME)
+DATATYPE : (_INTS | _STRING | _BYTES | _FLOATS | _BOOL | QNAME)
 
 data_type    : _DOT DATATYPE
 data_opt     : (REQUIRED | OPTIONAL)?

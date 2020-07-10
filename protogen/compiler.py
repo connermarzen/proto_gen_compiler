@@ -1,7 +1,6 @@
-from io import TextIOWrapper
 import os
-
-from typing import List, Text, TextIO
+from io import TextIOWrapper
+from typing import List
 
 import protogen.util as util
 from protogen.core import PGParser

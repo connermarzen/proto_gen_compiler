@@ -130,3 +130,7 @@ dmypy.json
 
 # Extas
 .vscode/
+
+output/
+*.protogen
+!*/*.protogen

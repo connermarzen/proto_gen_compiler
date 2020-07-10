@@ -16,10 +16,8 @@ class PGParser(object):
 
         # Clean up and list input files.
         self._files = {}
-        files_to_compile = set()
         for items in inputs:
             for item in glob.glob(items):
-                files_to_compile.add(item)
                 self._files[item] = None  # Add placeholder in dict for parsing
 
         if len(self._files) == 0:
