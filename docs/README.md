@@ -18,7 +18,7 @@ My inspiration came from [Google Protocol Buffers (Protobuf)](https://developers
 
 By all means, I think it is a really great solution (Protobuf, that is), but there are also some more optimistic reasons why I chose to roll my own:
 1. **I have dreamed of writing my own open source library.** First and foremost, since graduating with my Computer Science degree and working in Software, I have been dying to contribute to open source. I figured that the best way to do that would be to invent something entirely new, but practically speaking, this is a much more feasible approach as a new and growing developer. By working along side things that already exists, I have been able to create my own thing from scratch with a similar conceptual ideal as something that already existed.
-2. **I have a desire to understand the compiling process.** I have been interested in the process of code compiling and by writing this, I have been able to get a foundational understand of the it. I used [lark-parser](https://github.com/lark-parser/lark), "a modern parsing library for Python" to perform the parsing, but even still, using that library gave me a really good understanding of the process.
+2. **I have a desire to understand the compiling process.** I have been interested in the process of code compiling and by writing this, I have been able to get a foundational understanding of it. I used [lark-parser](https://github.com/lark-parser/lark), "a modern parsing library for Python" to perform the parsing, but even still, using that library gave me a really good understanding of the process.
 
 ## Features
 
