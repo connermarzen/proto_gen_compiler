@@ -1,5 +1,9 @@
 # Syntax Guide
 
+[Home](README.md)
+
+---
+
 ## Not-so-practical example
 
 This is a basic example file that we can use to explain the most basic aspects of the syntax:
@@ -92,16 +96,28 @@ The generated code consists of a few key items:
 
 ### Classes
 
-There is a class for every type that was declared in our file. In this case, the ExampleMessage type we wrote in our `.protogen` file became a PYthon class. This class has a getter and setter for every single attribute you specified. Note that nested types are allowed, and will be explained in further detail down below.
+There is a class for every type that was declared in our file. In this case, the ExampleMessage type we wrote in our `.protogen` file became a Python class. This class has a getter and setter for every single attribute you specified. Note that nested types are allowed, and will be explained in further detail down below.
 
 This class can now be used like so:
 
 ```python
->>> import ExampleProtocol_proto as ex
+import ExampleProtocol_proto as ex
 
->>> myMessage = ex.ExampleMessage() # we construct an empty message
->>> myMessage.setMessagecontents('Hello, there!')
->>> myMessage.setIsparent(True)
+myMessage = ex.ExampleMessage() # we construct an empty message
+myMessage.setMessagecontents('Hello, there!')
+myMessage.setIsparent(True)
 
->>> print(myMessage)
+print(myMessage)
+```
+
+### Factory
+
+Of the classes that get created, there is a Factory class that gets generated. This factory class is responsible for the detection and deserialization of serialized messages. A factory will be generated with respect to each file, so that related messages can be determined and parsed. In the future, it would be nice to make a root level factory that returns objects from all the files/modules.
+
+```python
+from ExampleProtocol_proto import ExampleProtocolFactory as Factory
+
+newMessage = # suppose there are some bytes here
+
+myFactory.deserialize(newMessage) # <- returns the proper object for you, automatically.
 ```

@@ -1,5 +1,11 @@
 # Protogen
 
+* **[Home]()** &larr; you are here
+* [Syntax Starter](syntax.md)
+* [Understanding The Generated Python](generated/python.md)
+
+---
+
 Welcome! Protogen is a pure-Python implementation of a protocol generator.
 
 ## Motive
@@ -36,9 +42,3 @@ By all means, I think it is a really great solution (Protobuf, that is), but the
 * Minification of `.protogen` files for big projects.
   * Also, extension of minified files
 * Caching of generated files for faster generation
-
-## Contents
-
-In the future I intend to implement the wiki, but here are a list of documentation pages:
-
-* [Syntax](./syntax.md)
