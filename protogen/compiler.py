@@ -16,7 +16,7 @@ class PythonCompiler(object):
 
         if not os.path.exists(outDir):
             os.makedirs(outDir)
-        # remove tailing slash for consitently (I will add them back in)
+        # remove tailing slash for consistency (I will add them back in)
         self.outDir = outDir.rstrip('/')
 
         self.classes: List[PyClass] = []
