@@ -104,17 +104,17 @@ class PythonCompiler(object):
 
                 # Get methods
                 if thing[0] in STANDARD_TYPES.values():
-                    out.write('\n{}def get{}(self) -> {}:\n'.format(
-                        (tab*indent), short.capitalize(), thing[0]))
+                    out.write('\n{}def get_{}(self) -> {}:\n'.format(
+                        (tab*indent), short, thing[0]))
                 else:
-                    out.write('\n{}def get{}(self) -> {}:\n'.format(
-                        (tab*indent), short.capitalize(), thing[0]))
+                    out.write('\n{}def get_{}(self) -> {}:\n'.format(
+                        (tab*indent), short, thing[0]))
                 out.write('{}return self.{}\n'.format(
                     (tab*(indent+1)), util.getVarName(short, thing[1])))
 
                 # Set methods
-                out.write('\n{}def set{}(self, {}: {}) -> \'{}\':\n'.format(
-                    (tab*indent), short.capitalize(),
+                out.write('\n{}def set_{}(self, {}: {}) -> \'{}\':\n'.format(
+                    (tab*indent), short,
                     short, thing[0], pyClass.name))
                 out.write('{}self.{} = {}\n'.format(
                     (tab*(indent+1)), util.getVarName(
