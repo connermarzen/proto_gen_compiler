@@ -1,1 +1,1 @@
-protogen/grammar/proto_gen.lark
+include protogen/grammar/proto_gen.lark
