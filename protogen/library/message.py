@@ -37,7 +37,8 @@ class Serializable(object):
     def _encode(self) -> Dict:
         finalOut = self.__encode()
         return {
-            self.__class__.__module__+'.'+self.__class__.__name__: finalOut
+            # self.__class__.__module__+'.'+self.__class__.__name__: finalOut
+            self.__class__.__name__: finalOut
         }
 
     @staticmethod
