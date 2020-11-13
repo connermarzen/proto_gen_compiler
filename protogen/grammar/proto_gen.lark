@@ -17,7 +17,7 @@ _LBRACE    : "{"
 _RBRACE    : "}"
 
 HEADER_NAME       : /[A-Z]+[a-zA-Z]*/
-QNAME             : /[a-zA-Z]+[a-zA-Z0-9]*/
+QNAME             : /[a-zA-Z]+[a-zA-Z0-9_]*/
 _QNAME            : QNAME
 // TYPENAME          : /(?!^\.req$|^\.opt$)^\.[a-zA-Z]+/
 _STRING_INNER     : /.*?/

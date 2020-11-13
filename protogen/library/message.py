@@ -22,16 +22,16 @@ class Serializable(object):
         for item in data:
             if not isinstance(data[item], (int, float, str, list, dict, set, type(None))):
                 if item.startswith('_r_'):
-                    out[item.lstrip('_r_')] = (self.__encode(
+                    out[item[3:]] = (self.__encode(
                         data=data[item], out=out), True)
                 elif item.startswith('_o_'):
-                    out[item.lstrip('_o_')] = (self.__encode(
+                    out[item[3:]] = (self.__encode(
                         data=data[item], out=out), False)
             else:
                 if item.startswith('_r_'):
-                    out[item.lstrip('_r_')] = (data[item], True)
+                    out[item[3:]] = (data[item], True)
                 elif item.startswith('_o_'):
-                    out[item.lstrip('_o_')] = (data[item], False)
+                    out[item[3:]] = (data[item], False)
         return out
 
     def _encode(self) -> Dict:
@@ -71,46 +71,46 @@ class Printable(object):
                     if item.startswith('_o_'):
                         outString += '{}{:<20} \n{}'.format(
                             self._indent(indent),
-                            item.lstrip('_o_') + ' (opt)',
+                            item[3:] + ' (opt)',
                             self._str(data[item], indent+1))
                     elif item.startswith('_r_'):
                         outString += '{}{:<20} \n{}'.format(
                             self._indent(indent),
-                            item.lstrip('_r_') + ' (req)',
+                            item[3:] + ' (req)',
                             self._str(data[item], indent+1))
                 else:
                     if item.startswith('_o_'):
                         outString += '{}{:<20} \n{}'.format(
                             '    '*indent,
-                            item.lstrip('_o_') + ' (opt)',
+                            item[3:] + ' (opt)',
                             self._str(data[item], indent+1))
                     elif item.startswith('_r_'):
                         outString += '{}{:<20} \n{}'.format(
                             '    '*indent,
-                            item.lstrip('_r_') + ' (req)',
+                            item[3:] + ' (req)',
                             self._str(data[item], indent+1))
             else:
                 if indent > 0:
                     if item.startswith('_o_'):
                         outString += '{}\u2192 {:<20}: {} (opt)\n'.format(
                             self._indent(indent),
-                            item.lstrip('_o_'),
+                            item[3:],
                             data[item])
                     elif item.startswith('_r_'):
                         outString += '{}\u2192 {:<20}: {} (req) \n'.format(
                             self._indent(indent),
-                            item.lstrip('_r_'),
+                            item[3:],
                             data[item])
                 else:
                     if item.startswith('_o_'):
                         outString += '{}{:<20}: {} (opt)\n'.format(
                             self._indent(indent),
-                            item.lstrip('_o_'),
+                            item[3:],
                             data[item])
                     elif item.startswith('_r_'):
                         outString += '{}{:<20}: {} (req) \n'.format(
                             self._indent(indent),
-                            item.lstrip('_r_'),
+                            item[3:],
                             data[item])
         return outString
 
@@ -132,7 +132,7 @@ class Message(object):
 
     def matchAttribute(self, varName: str):
         for item in filter(self._filterVars, vars(self)):
-            if item.lstrip('_o_').lstrip('_r_') == varName:
+            if item[3:][3:] == varName:
                 return item
         raise AttributeError('Variable name \'{}\' not found in {}.'
                              .format(varName, self.__class__.__name__))

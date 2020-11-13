@@ -155,3 +155,135 @@ class PythonCompiler(object):
             if item.parent is None:
                 self.printClass(out, file, item, 0, True)
         self.printFactory(out, file)
+
+
+class NodeJSCompiler(object):
+    def __init__(self, inFiles: List[str], outDir: str, verbose: bool = False):
+        self._parser = PGParser(inFiles)
+        self._parser.parse()
+
+        if not os.path.exists(outDir):
+            os.makedirs(outDir)
+        # remove tailing slash for consistency (I will add them back in)
+        self.outDir = outDir.rstrip('/')
+
+        self.classes: List[PyClass] = []
+        self.files: List[PGFile] = self._parser.transform()
+        del(self._parser)  # save memory, the parser is dense and repetitive
+
+
+    def compile(self):
+        import shutil
+
+        shutil.copyfile(os.path.join(os.path.dirname(__file__),
+                               'node_library/protogen.js'), self.outDir+'/protogen.js')
+        shutil.copyfile(os.path.join(os.path.dirname(__file__),
+                               'node_library/README.md'), self.outDir+'/README.md')
+
+        for item in self.files:
+            print('Notice: Support for submessages in NodeJS output is only partially supported.')
+            print('Notice: Type checking is not supported, so make sure you adhere to your protocol!')
+            print('View the generated README.md for more information.\n')
+            print('Compiling {} into {}/{}_proto.js'
+                  ''.format(item.filename, self.outDir, item.header))
+            file = open(self.outDir + '/' + item.header + '_proto.js', 'w')
+            self.generateCode(out=file, file=item)
+            file.write(os.linesep)
+            file.close()
+
+    def printData(self, out: TextIOWrapper, file: PGFile, pyClass: PyClass, indent: int):
+        tab = '    '
+        out.write("{}this.data = {{\n".format(tab*indent))
+        tab = '    '
+
+        for item in file.declarations:
+            if util.inferParentClass(item) == pyClass.fqname:
+                thing = file.declarations[item]
+                short = util.inferShortName(item)
+                # primitive data type
+                if thing[0] in STANDARD_TYPES.values():
+                    out.write('{}{}: [null, {}], // {} \n'.format(
+                        tab*(indent+1), short, str(thing[1]).lower(), thing[0]))
+                else:
+                    out.write('{}{}: [new {}(), {}], // {}\n'.format(
+                        tab*(indent+1), short, thing[0], str(thing[1]).lower(), thing[0]))
+
+        out.write("{}}}\n".format(tab*indent))
+
+    def printMethods(self, out: TextIOWrapper, file: PGFile, pyClass: PyClass, indent: int):
+        tab = '    '
+        for item in file.declarations:
+            if util.inferParentClass(item) == pyClass.fqname:
+                thing = file.declarations[item]
+                short = util.inferShortName(item)
+
+                # Get methods
+                out.write('\n{}get_{}() {{\n'.format(
+                    (tab*indent), short, thing[0]))
+
+                out.write('{}return this.data.{}[0] // {}\n'.format(
+                    (tab*(indent+1)), short, thing[0]))
+
+                out.write('{}}}\n'.format(tab*indent))
+                # Set methods
+                out.write('\n{}set_{}({}) {{ // {}\n'.format(
+                    (tab*indent), short, short, thing[0]))
+                out.write('{}this.data.{}[0] = {}\n'.format((tab*(indent+1)), short, short))
+                out.write('{}return this\n'.format((tab*(indent+1))))
+                out.write('{}}}\n'.format(tab*indent))
+
+    def printFactory(self, out: TextIOWrapper, file: PGFile):
+        tab = '    '
+        indent = 0
+        out.write("class {}Factory {{\n".format(file.header))
+        out.write("{}static deserialize(data) {{\n".format(tab*(indent+1)))
+        out.write("{}data = decode(data)\n".format(tab*(indent+2)))
+        out.write("{}if (Object.keys(data).length > 1) {{ throw "
+                  "TypeError('This is likely not a Protogen packet.') }}\n".format(tab*(indent+2)))
+        out.write("{}var packetType = Object.keys(data)[0]\n".format(tab*(indent+2)))
+        for pyClass in file.classes:
+            out.write("{}if (packetType == '{}') {{ return new {}(data[packetType]) }}\n".format(tab*(indent+2), pyClass.name, pyClass.name))
+        out.write("{}else {{ throw TypeError('No appropriate class found.') }}\n".format(tab*(indent+2)))
+        out.write("{}}}\n".format("    "))
+        out.write("{}}}\n".format(""))
+
+    def printClass(self, out: TextIOWrapper, file: PGFile, pyClass: PyClass,
+                   indent: int, root: bool):
+        tab = '    '
+        if root:
+            out.write("\nclass {} extends Serializable {{\n".format(pyClass.name))
+        else:
+            out.write("\n{}class {} {{\n".format(
+                tab*indent, pyClass.name))
+        out.write("\n{}constructor(data = null) {{\n"
+                  .format(tab*(indent+1)))
+        out.write("{}super()\n"
+                  .format(tab*(indent+2)))
+        if root:
+            out.write("{}if (data) {{\n".format(tab*(indent+2)))
+            out.write("{}this.data = data\n".format(tab*(indent+3)))
+            out.write("{}}}\n".format(tab*(indent+2)))
+            out.write("{}else {{\n".format(tab*(indent+2)))
+            self.printData(out, file, pyClass, indent+3)
+            out.write("{}}}\n".format(tab*(indent+2)))
+        out.write('{}}}\n'.format(tab*(indent+1)))
+        self.printMethods(out, file, pyClass, indent+1)
+
+        
+        out.write("}\n")
+
+    def printExports(self, out: TextIOWrapper, file: PGFile):
+        out.write('module.exports.{0}Factory = {0}Factory\n'.format(file.header))
+        for item in file.classes:
+            out.write('module.exports.{} = {}\n'.format(item.fqname, item.name))
+
+    def generateCode(self, out: TextIOWrapper, file: PGFile):
+        out.write("const { Serializable } = require('./protogen')\n")
+        out.write("const { decode } = require('messagepack')\n")
+
+        for item in file.classes:
+            self.printClass(out, file, item, 0, True)
+        out.write("\n")
+        self.printFactory(out, file)
+        out.write("\n")
+        self.printExports(out, file)

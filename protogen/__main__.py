@@ -1,5 +1,5 @@
 from protogen.core import PGParser
-from protogen.compiler import PythonCompiler
+from protogen.compiler import PythonCompiler, NodeJSCompiler
 
 import argparse
 import glob
@@ -21,7 +21,15 @@ if __name__ == '__main__':
                         const='output',
                         metavar='out_dir',
                         nargs='?',
-                        help='Output directory for compiled Python files. '
+                        help='Output directory for compiled Python files.'
+                             '[Default]: "output" folder')
+
+    parser.add_argument('-node', '--node-javascript',
+                        type=str,
+                        const='output',
+                        metavar='out_dir',
+                        nargs='?',
+                        help='Output directory for compiled NodeJS Javscript file.'
                              '[Default]: "output" folder')
 
     # parser.add_argument('-m', '--minify',
@@ -45,12 +53,21 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     operated = False
+    
     if args.python:
         pyCompiler = PythonCompiler(inFiles=args.input,
                                     outDir=args.python,
                                     verbose=args.verbose)
         pyCompiler.compile()
         del(pyCompiler)
+        operated = True
+
+    if args.node_javascript:
+        nodeJsCompiler = NodeJSCompiler(inFiles=args.input,
+                                        outDir=args.node_javascript,
+                                        verbose=args.verbose)
+        nodeJsCompiler.compile()
+        del(nodeJsCompiler)
         operated = True
 
     # if args.minify:
