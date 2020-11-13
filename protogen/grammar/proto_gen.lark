@@ -33,13 +33,14 @@ _U32     : ("uint32" | "u32")
 _U64     : ("uint64" | "u64")
 _I32     : ("int32" | "i32")
 _I64     : ("int64" | "i64")
+_INT     : ("int" | "integer")
 _FLOAT   : (/[F|f]loat/)
 _DOUBLE  : (/[D|d]ouble/)
 _STRING  : (/[S|s]tr(ing)?/)
 _BYTES   : /[B|b]ytes/
 _BOOL    : (/[B|b]ool(ean)?/)
 
-_INTS    : (_U32 | _U64 | _I32 | _I64)
+_INTS    : (_U32 | _U64 | _I32 | _I64 | _INT)
 _FLOATS  : (_FLOAT ) // | _DOUBLE
 DATATYPE : (_INTS | _STRING | _BYTES | _FLOATS | _BOOL | QNAME)
 

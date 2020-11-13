@@ -1,4 +1,5 @@
 STANDARD_TYPES = {
+    'int':     'int',
     'uint32':  'int',
     'u32':     'int',
     'uint64':  'int',
@@ -18,4 +19,26 @@ STANDARD_TYPES = {
     'Bool':    'bool',
     'bool':    'bool',
 
+}
+
+JS_TYPES = {
+    'int':  'number',
+    'uint32':  'number',
+    'u32':     'number',
+    'uint64':  'number',
+    'u64':     'number',
+    'int32':   'number',
+    'i32':     'number',
+    'int64':   'number',
+    'String':  'string',
+    'string':  'string',
+    'str':     'string',
+    'Bytes':   'string',
+    'bytes':   'string',
+    'Float':   'number',
+    'float':   'number',
+    'Boolean': 'boolean',
+    'boolean': 'boolean',
+    'Bool':    'boolean',
+    'bool':    'boolean',
 }

@@ -4,7 +4,7 @@ from typing import List
 
 import protogen.util as util
 from protogen.core import PGParser
-from protogen.library.std import STANDARD_TYPES
+from protogen.library.std import JS_TYPES, STANDARD_TYPES
 from protogen.util import PGFile, PyClass
 
 
@@ -161,6 +161,8 @@ class _PythonCompiler(object):
 
 
 class NodeJSCompiler(object):
+    from protogen.library.std import JS_TYPES
+
     def __init__(self, inFiles: List[str], outDir: str, verbose: bool = False):
         self._parser = PGParser(inFiles)
         self._parser.parse()
@@ -174,18 +176,19 @@ class NodeJSCompiler(object):
         self.files: List[PGFile] = self._parser.transform()
         del(self._parser)  # save memory, the parser is dense and repetitive
 
-
     def compile(self):
         import shutil
 
         shutil.copyfile(os.path.join(os.path.dirname(__file__),
-                               'node_library/protogen.js'), self.outDir+'/protogen.js')
+                                     'node_library/protogen.js'), self.outDir+'/protogen.js')
         shutil.copyfile(os.path.join(os.path.dirname(__file__),
-                               'node_library/README.md'), self.outDir+'/README.md')
+                                     'node_library/README.md'), self.outDir+'/README.md')
 
         for item in self.files:
-            print('Notice: Support for submessages in NodeJS output is only partially supported.')
-            print('Notice: Type checking is not supported, so make sure you adhere to your protocol!')
+            print(
+                'Notice: Support for submessages in NodeJS output is only partially supported.')
+            print(
+                'Notice: Type checking is not supported, so make sure you adhere to your protocol!')
             print('View the generated README.md for more information.\n')
             print('Compiling {} into {}/{}_proto.js'
                   ''.format(item.filename, self.outDir, item.header))
@@ -205,13 +208,31 @@ class NodeJSCompiler(object):
                 short = util.inferShortName(item)
                 # primitive data type
                 if thing[0] in STANDARD_TYPES.values():
-                    out.write('{}{}: [null, {}], // {} \n'.format(
+                    out.write('{}{}: [null, {}, false], // {} \n'.format(
                         tab*(indent+1), short, str(thing[1]).lower(), thing[0]))
                 else:
-                    out.write('{}{}: [new {}(), {}], // {}\n'.format(
+                    out.write('{}{}: [new {}(), {}, true], // {}\n'.format(
                         tab*(indent+1), short, thing[0], str(thing[1]).lower(), thing[0]))
 
         out.write("{}}}\n".format(tab*indent))
+
+    def printArgs(self, out: TextIOWrapper, file: PGFile, pyClass: PyClass, indent: int, file_item, set_get: str):
+        tab = '    '
+        if util.inferParentClass(file_item) == pyClass.fqname:
+            thing = file.declarations[file_item]
+            short = util.inferShortName(file_item)
+            var_type = JS_TYPES.get(thing[0], thing[0])
+            if set_get == 'set':
+                out.write('{}/**\n'.format(tab*indent))
+                short = util.inferShortName(file_item)
+                out.write('{} * @param {{ {} }} {}\n'.format(tab *
+                                                             indent, var_type, short))
+                out.write('{} */\n'.format(tab*indent))
+            elif set_get == 'get':
+                out.write('{}/**\n'.format(tab*indent))
+                out.write(
+                    '{} * @returns {{ {} }}\n'.format(tab * indent, var_type))
+                out.write('{} */\n'.format(tab*indent))
 
     def printMethods(self, out: TextIOWrapper, file: PGFile, pyClass: PyClass, indent: int):
         tab = '    '
@@ -221,17 +242,20 @@ class NodeJSCompiler(object):
                 short = util.inferShortName(item)
 
                 # Get methods
-                out.write('\n{}get_{}() {{\n'.format(
+                self.printArgs(out, file, pyClass, indent, item, 'get')
+                out.write('{}get_{}() {{\n'.format(
                     (tab*indent), short, thing[0]))
 
                 out.write('{}return this.data.{}[0] // {}\n'.format(
                     (tab*(indent+1)), short, thing[0]))
 
-                out.write('{}}}\n'.format(tab*indent))
+                out.write('{}}}\n\n'.format(tab*indent))
                 # Set methods
-                out.write('\n{}set_{}({}) {{ // {}\n'.format(
+                self.printArgs(out, file, pyClass, indent, item, 'set')
+                out.write('{}set_{}({}) {{ // {}\n'.format(
                     (tab*indent), short, short, thing[0]))
-                out.write('{}this.data.{}[0] = {}\n'.format((tab*(indent+1)), short, short))
+                out.write('{}this.data.{}[0] = {}\n'.format(
+                    (tab*(indent+1)), short, short))
                 out.write('{}return this\n'.format((tab*(indent+1))))
                 out.write('{}}}\n'.format(tab*indent))
 
@@ -243,10 +267,13 @@ class NodeJSCompiler(object):
         out.write("{}data = decode(data)\n".format(tab*(indent+2)))
         out.write("{}if (Object.keys(data).length > 1) {{ throw "
                   "TypeError('This is likely not a Protogen packet.') }}\n".format(tab*(indent+2)))
-        out.write("{}var packetType = Object.keys(data)[0]\n".format(tab*(indent+2)))
+        out.write(
+            "{}var packetType = Object.keys(data)[0]\n".format(tab*(indent+2)))
         for pyClass in file.classes:
-            out.write("{}if (packetType == '{}') {{ return new {}(data[packetType]) }}\n".format(tab*(indent+2), pyClass.name, pyClass.name))
-        out.write("{}else {{ throw TypeError('No appropriate class found.') }}\n".format(tab*(indent+2)))
+            out.write("{}if (packetType == '{}') {{ return new {}(data[packetType]) }}\n".format(
+                tab*(indent+2), pyClass.name, pyClass.name))
+        out.write("{}else {{ throw TypeError('No appropriate class found.') }}\n".format(
+            tab*(indent+2)))
         out.write("{}}}\n".format("    "))
         out.write("{}}}\n".format(""))
 
@@ -254,7 +281,7 @@ class NodeJSCompiler(object):
                    indent: int, root: bool):
         tab = '    '
         if root:
-            out.write("\nclass {} extends Serializable {{\n".format(pyClass.name))
+            out.write("\nclass {} extends Message {{\n".format(pyClass.name))
         else:
             out.write("\n{}class {} {{\n".format(
                 tab*indent, pyClass.name))
@@ -263,25 +290,27 @@ class NodeJSCompiler(object):
         out.write("{}super()\n"
                   .format(tab*(indent+2)))
         if root:
-            out.write("{}if (data) {{\n".format(tab*(indent+2)))
-            out.write("{}this.data = data\n".format(tab*(indent+3)))
-            out.write("{}}}\n".format(tab*(indent+2)))
-            out.write("{}else {{\n".format(tab*(indent+2)))
-            self.printData(out, file, pyClass, indent+3)
-            out.write("{}}}\n".format(tab*(indent+2)))
+            # out.write("{}if (data) {{\n".format(tab*(indent+2)))
+            # out.write("{}this.data = data\n".format(tab*(indent+3)))
+            # out.write("{}}}\n".format(tab*(indent+2)))
+            # out.write("{}else {{\n".format(tab*(indent+2)))
+            # self.printData(out, file, pyClass, indent+3)
+            # out.write("{}}}\n".format(tab*(indent+2)))
+            self.printData(out, file, pyClass, indent+2)
         out.write('{}}}\n'.format(tab*(indent+1)))
         self.printMethods(out, file, pyClass, indent+1)
 
-        
         out.write("}\n")
 
     def printExports(self, out: TextIOWrapper, file: PGFile):
-        out.write('module.exports.{0}Factory = {0}Factory\n'.format(file.header))
+        out.write(
+            'module.exports.{0}Factory = {0}Factory\n'.format(file.header))
         for item in file.classes:
-            out.write('module.exports.{} = {}\n'.format(item.fqname, item.name))
+            out.write('module.exports.{} = {}\n'.format(
+                item.fqname, item.name))
 
     def generateCode(self, out: TextIOWrapper, file: PGFile):
-        out.write("const { Serializable } = require('./protogen')\n")
+        out.write("const { Message } = require('./protogen')\n")
         out.write("const { decode } = require('messagepack')\n")
 
         for item in file.classes:
@@ -323,7 +352,7 @@ class PythonCompiler(object):
         tab = '    '
         if root:
             out.write("\nclass {}(Serializable, "
-                        "Printable):\n".format(pyClass.name))
+                      "Printable):\n".format(pyClass.name))
         else:
             out.write("\n{}class {}(Serializable, Printable):\n".format(
                 tab*indent, pyClass.name))
@@ -336,14 +365,16 @@ class PythonCompiler(object):
                 short = util.inferShortName(item)
                 type, required = file.declarations[item]
                 if type in STANDARD_TYPES.values():
-                    out.write("{}self.data['{}'][0] = data['{}']\n".format(tab*(indent+3), short, short))
+                    out.write("{}self.data['{}'][0] = data['{}']\n".format(
+                        tab*(indent+3), short, short))
                 # local, nested class (needs 'self')
                 elif type in pyClass.gatherSubclasses('name'):
-                    out.write("{}self.data['{}'][0] = self.{}(data['{}'])\n".format(tab*(indent+3), short, type, short))
+                    out.write("{}self.data['{}'][0] = self.{}(data['{}'])\n".format(
+                        tab*(indent+3), short, type, short))
                 # local, non-nested class (doesn't need 'self')
                 else:
-                    out.write("{}self.data['{}'][0] = {}(data['{}'])\n".format(tab*(indent+3), short, type, short))
-
+                    out.write("{}self.data['{}'][0] = {}(data['{}'])\n".format(
+                        tab*(indent+3), short, type, short))
 
         for item in pyClass.subclasses:
             self.printClass(out, file, item, indent+1, False)
