@@ -7,7 +7,7 @@ The proto_gen_compiler (Protogen, for short) is a pure-Python implementation of 
 Currently, the best way to install Protogen is by cloning the repository and installing via pip.
 
 ```shell
-$ git clone https://github.com/connermarzen/proto_gen_compiler.git
+$ git clone https://github.com/connermarzen/protogen.git
 $ python3 -m pip install .
 ```
 
