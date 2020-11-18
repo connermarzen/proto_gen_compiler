@@ -8,10 +8,10 @@ from protogen.library.std import ACCEPTED_TYPES, JS_TYPES, PYTHON_TYPES
 from protogen.util import PGFile, PyClass
 
 
-class NodeJSCompiler(object):
-
+class Compiler(object):
     def __init__(self, inFiles: List[str], outDir: str, verbose: bool = False):
         self._parser = PGParser(inFiles)
+
         self._parser.parse()
 
         if not os.path.exists(outDir):
@@ -21,7 +21,27 @@ class NodeJSCompiler(object):
 
         self.classes: List[PyClass] = []
         self.files: List[PGFile] = self._parser.transform()
+
+        declarations = set()
+        types = set()
+        for file in self.files:
+            for item in file.types:
+                types.add(item[0])
+            for item in file.declarations:
+                declarations.add(file.declarations[item][0])
+
+        for item in declarations:
+            if item not in types and item not in ACCEPTED_TYPES:
+                raise ValueError(
+                    f"The declaration of type {item} was specified but no type {item} exists.")
+
         del(self._parser)  # save memory, the parser is dense and repetitive
+
+
+class NodeJSCompiler(Compiler):
+
+    def __init__(self, inFiles: List[str], outDir: str, verbose: bool = False):
+        super().__init__(inFiles, outDir, verbose)
 
     def compile(self):
         import shutil
@@ -82,7 +102,6 @@ class NodeJSCompiler(object):
                         tab*(indent+2), short, thing[0], str(thing[1]).lower(), thing[0]))
         out.write("{}}}\n".format(tab*(indent+1)))
         out.write("{}}}\n".format(tab*indent))
-        
 
     def printArgs(self, out: TextIOWrapper, file: PGFile, pyClass: PyClass, indent: int, file_item, set_get: str):
         tab = '    '
@@ -198,22 +217,10 @@ class NodeJSCompiler(object):
         self.printExports(out, file)
 
 
-class PythonCompiler(object):
+class PythonCompiler(Compiler):
 
     def __init__(self, inFiles: List[str], outDir: str, verbose: bool = False):
-        self._parser = PGParser(inFiles)
-        self._parser.parse()
-
-        if not os.path.exists(outDir):
-            os.makedirs(outDir)
-        # remove tailing slash for consistency (I will add them back in)
-        self.outDir = outDir.rstrip('/')
-
-        self.classes: List[PyClass] = []
-        self.files: List[PGFile] = self._parser.transform()
-        del(self._parser)  # save memory, the parser is dense and repetitive
-
-        # TODO: Work through parser and consolidate into PythonCompiler
+        super().__init__(inFiles, outDir, verbose)
 
     def compile(self):
         for item in self.files:

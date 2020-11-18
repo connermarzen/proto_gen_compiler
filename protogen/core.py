@@ -57,8 +57,6 @@ class PGParser(object):
         outfiles = []
         for tree in self._trees:
             # len(_files) == len(_trees) AND order == 'same'
-            # TODO Fix this to make it modular for more than one file.
-            # NOTE currently, this only supports a single file.
             outfiles.append(PGFile(tree, self._trees[tree]))
         return outfiles
 
