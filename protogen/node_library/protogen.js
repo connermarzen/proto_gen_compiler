@@ -7,6 +7,13 @@ class ValidationError extends Error {
     }
 }
 
+class ValueError extends Error {
+    constructor(message) {
+        super(message)
+        this.name = "ValueError"
+    }
+}
+
 class Message {
     static deserialize(data) {
         return decode(data)
@@ -50,6 +57,34 @@ class Message {
 
     toString() {
         return this._toString()
+    }
+
+    _assertType(name, value, type, canon_type) {
+        if (type == 'Array' && Array.isArray(value)) {
+            return
+        }
+        else if (value.constructor == Object) {
+            return
+        }
+        else if (typeof value != type) {
+            throw new TypeError(`Attribute ${name} is not of the proper type: ${type}.`)
+        }
+        else if (canon_type == 'int') {
+            if (value > (2 ** 31) - 1 || value < -(2 ** 31)) {
+                throw new ValueError(`Attribute ${name} is cannonically type ${canon_type} and should be within ${-1 * 2 ** 31} and ${2 ** 31 - 1}.`)
+            }
+            if (value % 1 !== 0) {
+                throw new ValueError(`Attribute ${name} is cannonically type ${canon_type} and should not be a floating point number.`)
+            }
+        } else if (canon_type == 'uint32') {
+            if (value > 2 ** 32 - 1 || value < 0) {
+                throw new ValueError(`Attribute ${name} is cannonically type ${canon_type} and should be within 0 and 4294967295.`)
+            }
+            if (value % 1 !== 0) {
+                throw new ValueError(`Attribute ${name} is cannonically type ${canon_type} and should not be a floating point number.`)
+            }
+        }
+        else return
     }
 }
 
