@@ -38,7 +38,7 @@ class PythonCompiler(Compiler):
             if util.inferParentClass(item) == pyClass.fqname:
                 short = util.inferShortName(item)
                 v_type, required = file.declarations[item]
-                if type in ACCEPTED_TYPES:
+                if v_type in ACCEPTED_TYPES:
                     out.write(
                         f"{tab*(indent+3)}self.data['{short}'][0] = data['{short}']\n")
                 # local, nested class (needs 'self')
@@ -135,8 +135,8 @@ class PythonCompiler(Compiler):
             "                raise AttributeError('Respective class not found.')\n")
 
     def generateCode(self, out: TextIOWrapper, file: PGFile):
-        out.write("from protogen.library.message import Serializable\n"),
-        out.write("from protogen.library.message import Printable\n\n")
+        out.write("from protogen.library.python.message import Serializable\n"),
+        out.write("from protogen.library.python.message import Printable\n\n")
         for item in file.classes:
             if item.parent is None:
                 self.printClass(out, file, item, 0, True)
