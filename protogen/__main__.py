@@ -1,8 +1,6 @@
-from protogen.core import PGParser
-from protogen.compiler import PythonCompiler, NodeJSCompiler
 
 import argparse
-import glob
+from protogen.library import markdown
 import sys
 from pprint import pprint
 
@@ -29,16 +27,24 @@ if __name__ == '__main__':
                         const='output',
                         metavar='out_dir',
                         nargs='?',
-                        help='Output directory for compiled NodeJS Javscript file.'
+                        help='Output directory for compiled NodeJS Javscript files.'
                              '[Default]: "output" folder')
 
-    # parser.add_argument('-m', '--minify',
-    #                     type=str,
-    #                     const='output',
-    #                     metavar='out_dir',
-    #                     nargs='?',
-    #                     help='Minify your protogen files for storage.'
-    #                          '[Default]: "output" folder')
+    parser.add_argument('-md', '--markdown',
+                        type=str,
+                        const='output',
+                        metavar='out_dir',
+                        nargs='?',
+                        help='Generate Markdown documentation.'
+                             '[Default]: "output" folder')
+
+    parser.add_argument('-m', '--minify',
+                        type=str,
+                        const='output',
+                        metavar='out_dir',
+                        nargs='?',
+                        help='Minify your protogen files for storage.'
+                             '[Default]: "output" folder')
 
     # parser.add_argument('-e', '--expand',
     #                     metavar='out_dir',
@@ -53,8 +59,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     operated = False
-    
+
     if args.python:
+        from protogen.library.python.compiler import PythonCompiler
         pyCompiler = PythonCompiler(inFiles=args.input,
                                     outDir=args.python,
                                     verbose=args.verbose)
@@ -63,6 +70,7 @@ if __name__ == '__main__':
         operated = True
 
     if args.node_javascript:
+        from protogen.library.nodeJS.compiler import NodeJSCompiler
         nodeJsCompiler = NodeJSCompiler(inFiles=args.input,
                                         outDir=args.node_javascript,
                                         verbose=args.verbose)
@@ -70,9 +78,20 @@ if __name__ == '__main__':
         del(nodeJsCompiler)
         operated = True
 
-    # if args.minify:
-    #     minifier = Minifier()
-    #     operated = True
+    if args.minify:
+        from protogen.library.minify.minifier import Minifier
+        minifier = Minifier(inFiles=args.input,
+                            outDir=args.minify)
+        minifier.minify()
+        del(minifier)
+        operated = True
+
+    if args.markdown:
+        from protogen.library.markdown.compiler import MarkdownCompiler
+        markdownCompiler = MarkdownCompiler(inFiles=args.input,
+                                            outDir=args.markdown)
+        markdownCompiler.compile()
+        operated = True
 
     if not operated:
         print('You must specify at least one output format ("--python out_dir" etc.)')

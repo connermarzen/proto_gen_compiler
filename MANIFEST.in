@@ -1,2 +1,3 @@
 include protogen/grammar/proto_gen.lark
-include protogen/node_library/*
+include protogen/library/nodeJS/*
+include protogen/library/markdown/*

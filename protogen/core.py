@@ -27,7 +27,6 @@ class PGParser(object):
             print('You can also specify more than one file, '
                   'separated by spaces.\n')
             print('Example:\n  a.protogen b.protogen c.protogen')
-
             sys.exit(1)
 
         with open(os.path.join(os.path.dirname(__file__),

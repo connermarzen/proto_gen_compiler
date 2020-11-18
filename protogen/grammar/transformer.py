@@ -1,6 +1,6 @@
 import lark
 from protogen.util import PGToken
-from protogen.library.std import ACCEPTED_TYPES
+from protogen.library.python.std import ACCEPTED_TYPES
 
 
 class PGTransformer(lark.Transformer):
