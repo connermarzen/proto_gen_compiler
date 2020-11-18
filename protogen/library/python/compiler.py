@@ -15,6 +15,11 @@ class PythonCompiler(Compiler):
         super().__init__(inFiles, outDir, verbose)
 
     def compile(self):
+        import shutil
+
+        shutil.copyfile(os.path.join(os.path.dirname(__file__),
+                                     'message.py'), self.outDir+'/message.py')
+
         for item in self.files:
             print('Compiling {} into {}/{}_proto.py'
                   ''.format(item.filename, self.outDir, item.header))
@@ -135,8 +140,9 @@ class PythonCompiler(Compiler):
             "                raise AttributeError('Respective class not found.')\n")
 
     def generateCode(self, out: TextIOWrapper, file: PGFile):
-        out.write("from protogen.library.python.message import Serializable\n"),
-        out.write("from protogen.library.python.message import Printable\n\n")
+        # out.write("from protogen.library.python.message import Serializable\n"),
+        # out.write("from protogen.library.python.message import Printable\n\n")
+        out.write("from .message import Printable, Serializable")
         for item in file.classes:
             if item.parent is None:
                 self.printClass(out, file, item, 0, True)
